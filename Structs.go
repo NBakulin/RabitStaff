@@ -143,3 +143,27 @@ func NewSX(item []Item, language []Language, nameNode []NameNode, purchase []Pur
 		UserPurchases: userPurchase,
 	}
 }
+
+func getItems(sx SX) []Item {
+	return sx.Items
+}
+
+func getLanguages(sx SX) []Language {
+	return sx.Languages
+}
+
+func getNameNodes(sx SX) []NameNode {
+	return sx.NameNodes
+}
+
+func getPurchases(sx SX) []Purchase {
+	return sx.Purchases
+}
+
+func getUsers(sx SX) []User {
+	return sx.Users
+}
+
+func getUserPurchases(sx SX) []UserPurchase {
+	return sx.UserPurchases
+}

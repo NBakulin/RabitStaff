@@ -5,12 +5,20 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/streadway/amqp"
 	_ "github.com/streadway/amqp"
 	"log"
 )
+
+var item []Item
+var language []Language
+var nameNode []NameNode
+var purchase []Purchase
+var user []User
+var userPurchase []UserPurchase
 
 func failIfError(err error, msg string) {
 	if err != nil {
@@ -55,41 +63,47 @@ func main() {
 			log.Printf("Received a message: %s", FromGOB64(string(d.Body[:])))
 			var sx = FromGOB64(string(d.Body[:]))
 			log.Printf("Received a message: %s", sx)
+			item = sx.Items
+			language = sx.Languages
+			nameNode = sx.NameNodes
+			purchase = sx.Purchases
+			user = sx.Users
+			userPurchase = sx.UserPurchases
+			<-forever
 		}
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever
 
-	//dbgorm, err := gorm.Open("mysql", "root:root@/normalizeddatabase?charset=utf8")
-	//
-	//dbgorm.Delete(&User{})
-	//dbgorm.Delete(&Item{})
-	//dbgorm.Delete(&Language{})
-	//dbgorm.Delete(&Purchase{})
-	//dbgorm.Delete(&UserPurchase{})
-	//dbgorm.Delete(&NameNode{})
-	//
-	//dbgorm.AutoMigrate()
-	//
-	//for i := 0; i < 2; i++ {
-	//	dbgorm.Create(&language[i])
-	//}
-	//
-	//for i := 0; i < len(firstFormTable); i++ {
-	//	dbgorm.Create(&item[i])
-	//	dbgorm.Create(&purchase[i])
-	//	dbgorm.Create(&userPurchase[i])
-	//}
-	//for i := 0; i < len(user); i++ {
-	//	dbgorm.Create(&user[i])
-	//}
-	//
-	//for i := 0; i < len(nameNode); i++ {
-	//	dbgorm.Create(&nameNode[i])
-	//}
-	//
-	//dbgorm.Close()
+	dbgorm, err := gorm.Open("mysql", "root:root@/normalizeddatabase?charset=utf8")
+
+	dbgorm.Delete(&User{})
+	dbgorm.Delete(&Item{})
+	dbgorm.Delete(&Language{})
+	dbgorm.Delete(&Purchase{})
+	dbgorm.Delete(&UserPurchase{})
+	dbgorm.Delete(&NameNode{})
+
+	dbgorm.AutoMigrate()
+
+	for i := 0; i < 2; i++ {
+		dbgorm.Create(&language[i])
+	}
+
+	for i := 0; i < len(purchase); i++ {
+		dbgorm.Create(&item[i])
+		dbgorm.Create(&purchase[i])
+		dbgorm.Create(&userPurchase[i])
+	}
+	for i := 0; i < len(user); i++ {
+		dbgorm.Create(&user[i])
+	}
+
+	for i := 0; i < len(nameNode); i++ {
+		dbgorm.Create(&nameNode[i])
+	}
+
+	dbgorm.Close()
 }
 
 func FromGOB64(str string) SX {
