@@ -144,6 +144,16 @@ func NewSX(item []Item, language []Language, nameNode []NameNode, purchase []Pur
 	}
 }
 
+type DesKey struct {
+	Key []byte
+}
+
+func NewDesKey() DesKey {
+	return DesKey{
+		Key: []byte("secretKey"),
+	}
+}
+
 func getItems(sx SX) []Item {
 	return sx.Items
 }

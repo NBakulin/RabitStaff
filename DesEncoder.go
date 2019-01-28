@@ -6,21 +6,6 @@ import (
 	"crypto/des"
 )
 
-func DesDecryption(key, iv, cipherText []byte) ([]byte, error) {
-
-	block, err := des.NewCipher(key)
-
-	if err != nil {
-		return nil, err
-	}
-
-	blockMode := cipher.NewCBCDecrypter(block, iv)
-	origData := make([]byte, len(cipherText))
-	blockMode.CryptBlocks(origData, cipherText)
-	origData = PKCS5UnPadding(origData)
-	return origData, nil
-}
-
 func DesEncryption(key, iv, plainText []byte) ([]byte, error) {
 
 	block, err := des.NewCipher(key)
@@ -35,6 +20,21 @@ func DesEncryption(key, iv, plainText []byte) ([]byte, error) {
 	cryted := make([]byte, len(origData))
 	blockMode.CryptBlocks(cryted, origData)
 	return cryted, nil
+}
+
+func DesDecryption(key, iv, cipherText []byte) ([]byte, error) {
+
+	block, err := des.NewCipher(key)
+
+	if err != nil {
+		return nil, err
+	}
+
+	blockMode := cipher.NewCBCDecrypter(block, iv)
+	origData := make([]byte, len(cipherText))
+	blockMode.CryptBlocks(origData, cipherText)
+	origData = PKCS5UnPadding(origData)
+	return origData, nil
 }
 
 func PKCS5Padding(src []byte, blockSize int) []byte {
