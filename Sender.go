@@ -29,6 +29,7 @@ func main() {
 	var purchase []Purchase
 	var user []User
 	var userPurchase []UserPurchase
+	var desKey = NewDesKey()
 
 	dbsqlite.Find(&firstFormTable)
 	fmt.Println(&firstFormTable)
@@ -55,6 +56,13 @@ func main() {
 	var sx = NewSX(item, language, nameNode, purchase, user, userPurchase)
 	var serializedStructs = ToGOB64(sx)
 
+	//add
+	mytext := []byte(serializedStructs)
+
+	cryptoText, _ := DesEncryption(desKey.Key, desKey.Key, mytext)
+	fmt.Println(string(cryptoText))
+	//add
+
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -73,6 +81,7 @@ func main() {
 	)
 	failOnError(err, "Failed to declare a queue")
 
+	//add
 	err = ch.Publish(
 		"",     // exchange
 		q.Name, // routing key
@@ -80,8 +89,21 @@ func main() {
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(serializedStructs),
+			Body:        desKey.Key,
 		})
-	log.Printf(" [x] Sent %s", serializedStructs)
+	//add
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        cryptoText,
+		})
+
+	log.Printf(" [x] Sent %s", desKey.Key)
+	log.Printf(" [x] Sent 2 %s", serializedStructs)
 	failOnError(err, "Failed to publish a message")
 }
