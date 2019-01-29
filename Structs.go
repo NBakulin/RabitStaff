@@ -150,7 +150,7 @@ type DesKey struct {
 
 func NewDesKey() DesKey {
 	return DesKey{
-		Key: []byte("secretKey"),
+		Key: []byte("Secret 1"),
 	}
 }
 

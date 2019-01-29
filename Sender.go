@@ -16,7 +16,7 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func main() {
+func main1() {
 	dbsqlite, err := gorm.Open("sqlite3", "C:/SQLiteStudio/FirstFormDB.db")
 	if err != nil {
 		panic("failed to connect database")
@@ -70,7 +70,7 @@ func main() {
 	kq, err := ch.QueueDeclare(
 		"key_queue", // name
 		false,       // durable
-		false,       // delete when unused
+		true,        // delete when unused
 		false,       // exclusive
 		false,       // no-wait
 		nil,         // arguments
@@ -90,7 +90,7 @@ func main() {
 	mq, err := ch.QueueDeclare(
 		"message_queue", // name
 		false,           // durable
-		false,           // delete when unused
+		true,            // delete when unused
 		false,           // exclusive
 		false,           // no-wait
 		nil,             // arguments

@@ -20,7 +20,6 @@ var purchase []Purchase
 var user []User
 var userPurchase []UserPurchase
 var key []byte
-var key2 string
 
 func failIfError(err error, msg string) {
 	if err != nil {
@@ -28,10 +27,9 @@ func failIfError(err error, msg string) {
 	}
 }
 
-func mainн() {
+func main() {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failIfError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
 
 	ch, err := conn.Channel()
 	failIfError(err, "Failed to open a channel")
@@ -48,16 +46,19 @@ func mainн() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
-	for d := range keyMsg {
-		key2 = string(d.Body[:])
-		log.Printf(key2)
-	}
+	forever := make(chan bool)
 
-	conn2, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failIfError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
+	go func() {
+		for d := range keyMsg {
+			key = d.Body[:]
+			log.Printf("Received a message: %s", string(key))
+			<-forever
+		}
+	}()
 
-	ch2, err := conn2.Channel()
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+
+	ch2, err := conn.Channel()
 	failIfError(err, "Failed to open a channel")
 	defer ch.Close()
 
@@ -72,24 +73,26 @@ func mainн() {
 	)
 	failIfError(err, "Failed to register a consumer")
 
-	//forever2 := make(chan bool)
-	//
-	//go func() {
-	for d := range msgs {
-		log.Printf("Received a message: %s", FromGOB64(string(d.Body[:])))
-		var sx = FromGOB64(string(d.Body[:]))
-		log.Printf("Received a message: %s", sx)
-		item = sx.Items
-		language = sx.Languages
-		nameNode = sx.NameNodes
-		purchase = sx.Purchases
-		user = sx.Users
-		userPurchase = sx.UserPurchases
-		//<-forever2
-	}
-	//}()
+	forever2 := make(chan bool)
+
+	go func() {
+		for d := range msgs {
+			var decryptedSx, _ = DesDecryption(key, key, d.Body[:])
+			var sx = FromGOB64(string(decryptedSx))
+			log.Printf("Received a message: %s", sx)
+			item = sx.Items
+			language = sx.Languages
+			nameNode = sx.NameNodes
+			purchase = sx.Purchases
+			user = sx.Users
+			userPurchase = sx.UserPurchases
+			<-forever2
+		}
+	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	conn.Close()
+	ch2.Close()
 
 	dbgorm, err := gorm.Open("mysql", "root:root@/normalizeddatabase?charset=utf8")
 
