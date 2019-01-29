@@ -55,13 +55,9 @@ func main() {
 	dbsqlite.Close()
 	var sx = NewSX(item, language, nameNode, purchase, user, userPurchase)
 	var serializedStructs = ToGOB64(sx)
-
-	//add
 	mytext := []byte(serializedStructs)
-
+	//не робит, сук
 	cryptoText, _ := DesEncryption(desKey.Key, desKey.Key, mytext)
-	fmt.Println(string(cryptoText))
-	//add
 
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
@@ -71,39 +67,46 @@ func main() {
 	failOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
+	kq, err := ch.QueueDeclare(
+		"key_queue", // name
+		false,       // durable
+		false,       // delete when unused
+		false,       // exclusive
+		false,       // no-wait
+		nil,         // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	err = ch.Publish(
+		"",      // exchange
+		kq.Name, // routing key
+		false,   // mandatory
+		false,   // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        desKey.Key,
+		})
+
+	mq, err := ch.QueueDeclare(
+		"message_queue", // name
+		false,           // durable
+		false,           // delete when unused
+		false,           // exclusive
+		false,           // no-wait
+		nil,             // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
 	//add
 	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        desKey.Key,
-		})
-	//add
-
-	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
+		"",      // exchange
+		mq.Name, // routing key
+		false,   // mandatory
+		false,   // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        cryptoText,
 		})
 
-	log.Printf(" [x] Sent %s", desKey.Key)
-	log.Printf(" [x] Sent 2 %s", serializedStructs)
 	failOnError(err, "Failed to publish a message")
 }
