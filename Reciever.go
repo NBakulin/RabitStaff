@@ -33,7 +33,6 @@ func main() {
 
 	ch, err := conn.Channel()
 	failIfError(err, "Failed to open a channel")
-	defer ch.Close()
 
 	keyMsg, err := ch.Consume(
 		"key_queue", // queue
@@ -44,23 +43,16 @@ func main() {
 		false,       // no-wait
 		nil,         // args
 	)
-	failOnError(err, "Failed to register a consumer")
+	failIfError(err, "Failed to register a consumer")
 
-	forever := make(chan bool)
-
-	go func() {
-		for d := range keyMsg {
-			key = d.Body[:]
-			log.Printf("Received a message: %s", string(key))
-			<-forever
-		}
-	}()
-
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	for d := range keyMsg {
+		key = d.Body[:]
+		log.Printf("Received a message: %s", string(key))
+		ch.Close()
+	}
 
 	ch2, err := conn.Channel()
 	failIfError(err, "Failed to open a channel")
-	defer ch.Close()
 
 	msgs, err := ch2.Consume(
 		"message_queue",    // queue
@@ -73,26 +65,19 @@ func main() {
 	)
 	failIfError(err, "Failed to register a consumer")
 
-	forever2 := make(chan bool)
-
-	go func() {
-		for d := range msgs {
-			var decryptedSx, _ = DesDecryption(key, key, d.Body[:])
-			var sx = FromGOB64(string(decryptedSx))
-			log.Printf("Received a message: %s", sx)
-			item = sx.Items
-			language = sx.Languages
-			nameNode = sx.NameNodes
-			purchase = sx.Purchases
-			user = sx.Users
-			userPurchase = sx.UserPurchases
-			<-forever2
-		}
-	}()
-
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	for d := range msgs {
+		var decryptedSx, _ = DesDecryption(key, key, d.Body[:])
+		var sx = FromGOB64(string(decryptedSx))
+		log.Printf("%s", sx)
+		item = sx.Items
+		language = sx.Languages
+		nameNode = sx.NameNodes
+		purchase = sx.Purchases
+		user = sx.Users
+		userPurchase = sx.UserPurchases
+		ch2.Close()
+	}
 	conn.Close()
-	ch2.Close()
 
 	dbgorm, err := gorm.Open("mysql", "root:root@/normalizeddatabase?charset=utf8")
 
@@ -105,7 +90,7 @@ func main() {
 
 	dbgorm.AutoMigrate()
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < len(language); i++ {
 		dbgorm.Create(&language[i])
 	}
 

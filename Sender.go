@@ -16,7 +16,7 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func main1() {
+func main() {
 	dbsqlite, err := gorm.Open("sqlite3", "C:/SQLiteStudio/FirstFormDB.db")
 	if err != nil {
 		panic("failed to connect database")
