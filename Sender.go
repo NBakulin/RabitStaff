@@ -77,6 +77,7 @@ func main() {
 	)
 	failOnError(err, "Failed to declare a queue")
 
+	encryptedRsa := encryptRsa(desKey.Key)
 	err = ch.Publish(
 		"",      // exchange
 		kq.Name, // routing key
@@ -84,7 +85,7 @@ func main() {
 		false,   // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        desKey.Key,
+			Body:        encryptedRsa,
 		})
 
 	mq, err := ch.QueueDeclare(

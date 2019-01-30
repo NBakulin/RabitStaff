@@ -46,7 +46,7 @@ func main() {
 	failIfError(err, "Failed to register a consumer")
 
 	for d := range keyMsg {
-		key = d.Body[:]
+		key = dencryptRsa(d.Body[:])
 		log.Printf("Received a message: %s", string(key))
 		ch.Close()
 	}
