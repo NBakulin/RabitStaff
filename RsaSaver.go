@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-func main1() {
+func main() {
 
 	// generate private key
 	privatekey, err := rsa.GenerateKey(rand.Reader, 1024)
